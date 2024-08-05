@@ -15,9 +15,10 @@
 package provider
 
 import (
-	"math/rand"
-	"time"
-
+	awsArn "github.com/aws/aws-sdk-go-v2/aws/arn"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
 	p "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/tokens"
@@ -28,12 +29,13 @@ var Version string
 
 const Name string = "awstags"
 
+var tagClients map[string]*resourcegroupstaggingapi.ResourceGroupsTaggingAPI
+
 func Provider() p.Provider {
 	// We tell the provider what resources it needs to support.
-	// In this case, a single custom resource.
 	return infer.Provider(infer.Options{
 		Resources: []infer.InferredResource{
-			infer.Resource[Random, RandomArgs, RandomState](),
+			infer.Resource[TagResources, TagResourcesArgs, TagResourcesState](),
 		},
 		ModuleMap: map[tokens.ModuleName]tokens.ModuleName{
 			"provider": "index",
@@ -51,41 +53,165 @@ func Provider() p.Provider {
 // - Delete: Custom logic when the resource is deleted.
 // - Annotate: Describe fields and set defaults for a resource.
 // - WireDependencies: Control how outputs and secrets flows through values.
-type Random struct{}
+type TagResources struct{}
 
-// Each resource has an input struct, defining what arguments it accepts.
-type RandomArgs struct {
-	// Fields projected into Pulumi must be public and hava a `pulumi:"..."` tag.
-	// The pulumi tag doesn't need to match the field name, but it's generally a
-	// good idea.
-	Length int `pulumi:"length"`
+type TagResourcesArgs struct {
+	ResourceARNList []string          `pulumi:"resourceARNList"`
+	Tags            map[string]string `pulumi:"tags"`
 }
 
-// Each resource has a state, describing the fields that exist on the created resource.
-type RandomState struct {
-	// It is generally a good idea to embed args in outputs, but it isn't strictly necessary.
-	RandomArgs
-	// Here we define a required output called result.
-	Result string `pulumi:"result"`
+type TagResourcesState struct {
+	TagResourcesArgs
 }
 
 // All resources must implement Create at a minimum.
-func (Random) Create(ctx p.Context, name string, input RandomArgs, preview bool) (string, RandomState, error) {
-	state := RandomState{RandomArgs: input}
+func (TagResources) Create(ctx p.Context, name string, input TagResourcesArgs, preview bool) (string, TagResourcesState, error) {
+	state := TagResourcesState{TagResourcesArgs: input}
 	if preview {
 		return name, state, nil
 	}
-	state.Result = makeRandom(input.Length)
+
+	addTags(input.ResourceARNList, input.Tags)
+
 	return name, state, nil
 }
 
-func makeRandom(length int) string {
-	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
-	charset := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") // SED_SKIP
-
-	result := make([]rune, length)
-	for i := range result {
-		result[i] = charset[seededRand.Intn(len(charset))]
+func (TagResources) Delete(ctx p.Context, name string, state TagResourcesState, preview bool) error {
+	if preview {
+		return nil
 	}
-	return string(result)
+
+	removeTags(state.ResourceARNList, getTagKeys(state.Tags))
+
+	return nil
+}
+
+func (TagResources) Update(ctx p.Context, name string, old, new TagResourcesState, preview bool) error {
+	// Find tags that need to be removed.
+	removedTagKeys := []string{}
+	for k := range old.Tags {
+		if _, ok := new.Tags[k]; !ok {
+			removedTagKeys = append(removedTagKeys, k)
+		}
+	}
+
+	// Find the difference between the old and new ARNs.
+	keptArns := make([]string, 0)
+	removedArns := make([]string, 0)
+	for _, arn := range old.ResourceARNList {
+		if !contains(new.ResourceARNList, arn) {
+			removedArns = append(removedArns, arn)
+		} else {
+			keptArns = append(keptArns, arn)
+		}
+	}
+
+	// Remove existing tags from removed ARNs.
+	if err := removeTags(removedArns, getTagKeys(old.Tags)); err != nil {
+		return err
+	}
+
+	// Remove removed tags from kept ARNs.
+	if err := removeTags(keptArns, removedTagKeys); err != nil {
+		return err
+	}
+
+	// Add desired tags/values to kept/new ARNs.
+	return addTags(new.ResourceARNList, new.Tags)
+}
+
+func removeTags(arns []string, tagKeys []string) error {
+	// Group ARNs by region so we can make a single call to each region.
+	arnsByRegion := groupArnsByRegion(arns)
+
+	for region, arns := range arnsByRegion {
+		tagClient, err := getTaggingClient(region)
+		if err != nil {
+			return err
+		}
+
+		_, err = tagClient.UntagResources(&resourcegroupstaggingapi.UntagResourcesInput{
+			ResourceARNList: aws.StringSlice(arns),
+			TagKeys:         aws.StringSlice(tagKeys),
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func addTags(arns []string, tags map[string]string) error {
+	// Group ARNs by region so we can make a single call to each region.
+	arnsByRegion := groupArnsByRegion(arns)
+
+	for region, arns := range arnsByRegion {
+		tagClient, err := getTaggingClient(region)
+		if err != nil {
+			return err
+		}
+
+		_, err = tagClient.TagResources(&resourcegroupstaggingapi.TagResourcesInput{
+			ResourceARNList: aws.StringSlice(arns),
+			Tags:            aws.StringMap(tags),
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func groupArnsByRegion(arns []string) map[string][]string {
+	arnsByRegion := make(map[string][]string)
+	for _, arnString := range arns {
+		arn, err := awsArn.Parse(arnString)
+		if err != nil {
+			return nil
+		}
+
+		arnsByRegion[arn.Region] = append(arnsByRegion[arn.Region], arn.String())
+	}
+
+	return arnsByRegion
+}
+
+func getTagKeys(tags map[string]string) []string {
+	keys := make([]string, 0, len(tags))
+	for k := range tags {
+		keys = append(keys, k)
+	}
+
+	return keys
+}
+
+func getTaggingClient(region string) (*resourcegroupstaggingapi.ResourceGroupsTaggingAPI, error) {
+	if tagClients == nil {
+		tagClients = make(map[string]*resourcegroupstaggingapi.ResourceGroupsTaggingAPI)
+	}
+
+	if client, ok := tagClients[region]; ok {
+		return client, nil
+	}
+
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		Config:            aws.Config{Region: aws.String(region)},
+		SharedConfigState: session.SharedConfigEnable,
+	}))
+
+	tagClients[region] = resourcegroupstaggingapi.New(sess)
+
+	return tagClients[region], nil
+}
+
+func contains(arr []string, target string) bool {
+	for _, s := range arr {
+		if s == target {
+			return true
+		}
+	}
+
+	return false
 }
