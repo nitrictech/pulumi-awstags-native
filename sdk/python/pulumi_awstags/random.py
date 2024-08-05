@@ -6,7 +6,7 @@ import copy
 import warnings
 import pulumi
 import pulumi.runtime
-from typing import Any, Mapping, Optional, Sequence, Union, overload
+from typing import Any, Callable, Mapping, Optional, Sequence, Union, overload
 from . import _utilities
 
 __all__ = ['RandomArgs', 'Random']
@@ -18,7 +18,16 @@ class RandomArgs:
         """
         The set of arguments for constructing a Random resource.
         """
-        pulumi.set(__self__, "length", length)
+        RandomArgs._configure(
+            lambda key, value: pulumi.set(__self__, key, value),
+            length=length,
+        )
+    @staticmethod
+    def _configure(
+             _setter: Callable[[Any, Any], None],
+             length: pulumi.Input[int],
+             opts: Optional[pulumi.ResourceOptions]=None):
+        _setter("length", length)
 
     @property
     @pulumi.getter
@@ -60,6 +69,10 @@ class Random(pulumi.CustomResource):
         if resource_args is not None:
             __self__._internal_init(resource_name, opts, **resource_args.__dict__)
         else:
+            kwargs = kwargs or {}
+            def _setter(key, value):
+                kwargs[key] = value
+            RandomArgs._configure(_setter, **kwargs)
             __self__._internal_init(resource_name, *args, **kwargs)
 
     def _internal_init(__self__,
@@ -80,7 +93,7 @@ class Random(pulumi.CustomResource):
             __props__.__dict__["length"] = length
             __props__.__dict__["result"] = None
         super(Random, __self__).__init__(
-            'xyz:index:Random',
+            'awstags:index:Random',
             resource_name,
             __props__,
             opts)

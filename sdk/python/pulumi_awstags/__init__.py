@@ -11,11 +11,11 @@ _utilities.register(
     resource_modules="""
 [
  {
-  "pkg": "xyz",
+  "pkg": "awstags",
   "mod": "index",
-  "fqn": "pulumi_xyz",
+  "fqn": "pulumi_awstags",
   "classes": {
-   "xyz:index:Random": "Random"
+   "awstags:index:Random": "Random"
   }
  }
 ]
@@ -23,9 +23,9 @@ _utilities.register(
     resource_packages="""
 [
  {
-  "pkg": "xyz",
-  "token": "pulumi:providers:xyz",
-  "fqn": "pulumi_xyz",
+  "pkg": "awstags",
+  "token": "pulumi:providers:awstags",
+  "fqn": "pulumi_awstags",
   "class": "Provider"
  }
 ]

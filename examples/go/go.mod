@@ -1,4 +1,4 @@
-module provider-xyz-native
+module provider-awstags-native
 
 go 1.20
 

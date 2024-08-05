@@ -1,10 +1,10 @@
-PROJECT_NAME := Pulumi Xyz Resource Provider
+PROJECT_NAME := Pulumi awstags Resource Provider
 
-PACK             := xyz
+PACK             := awstags
 PACKDIR          := sdk
-PROJECT          := github.com/pulumi/pulumi-xyz
-NODE_MODULE_NAME := @abc/xyz
-NUGET_PKG_NAME   := Abc.Xyz
+PROJECT          := github.com/jyecusch/pulumi-awstags-native
+NODE_MODULE_NAME := @nitric/awstags
+NUGET_PKG_NAME   := nitric.awstags
 
 PROVIDER        := pulumi-resource-${PACK}
 VERSION         ?= $(shell pulumictl get version)

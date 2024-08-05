@@ -1,13 +1,13 @@
-name: provider-xyz-native
+name: provider-awstags-native
 runtime: yaml
 plugins:
   providers:
-    - name: xyz
+    - name: awstags
       path: ../../bin
 
 resources:
   myRandomResource:
-    type: xyz:Random
+    type: awstags:Random
     properties:
       length: 24
 
