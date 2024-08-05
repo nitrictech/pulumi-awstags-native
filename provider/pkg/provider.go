@@ -12,13 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package provider
 
 import (
+	"github.com/jyecusch/pulumi-awstags-native/provider/pkg/aws"
 	p "github.com/pulumi/pulumi-go-provider"
-
-	awstags "github.com/jyecusch/pulumi-awstags-native/provider/pkg"
+	"github.com/pulumi/pulumi-go-provider/infer"
+	"github.com/pulumi/pulumi/sdk/v3/go/common/tokens"
 )
 
-// Serve the provider against Pulumi's Provider protocol.
-func main() { p.RunProvider(awstags.Name, awstags.Version, awstags.Provider()) }
+// Version is initialized by the Go linker to contain the semver of this build.
+var Version string
+
+const Name string = "awstags"
+
+func Provider() p.Provider {
+	// We tell the provider what resources it needs to support.
+	return infer.Provider(infer.Options{
+		Resources: []infer.InferredResource{
+			infer.Resource[aws.TagResources, aws.TagResourcesArgs, aws.TagResourcesState](),
+		},
+		ModuleMap: map[tokens.ModuleName]tokens.ModuleName{
+			"provider": "index",
+		},
+	})
+}
