@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/blang/semver"
-	"github.com/nitrictech/pulumi-awstags/sdk/v3/go/awstags/internal"
+	"github.com/nitrictech/pulumi-awstags-native/sdk/v3/go/awstags/internal"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 

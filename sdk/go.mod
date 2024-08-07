@@ -1,4 +1,4 @@
-module github.com/pulumi/pulumi-xyz/sdk
+module github.com/nitrictech/pulumi-awstags-native/sdk/v3
 
 go 1.21
 

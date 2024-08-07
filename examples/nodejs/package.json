@@ -6,6 +6,6 @@
 	"dependencies": {
 		"typescript": "^4.0.0",
 		"@pulumi/pulumi": "^3.0.0",
-		"@nitric/pulumi-awstags": "0.0.1-alpha.1722572321+80cfe413.dirty"
+		"@nitric/pulumi-awstags": "v0.0.1-alpha.1723001710+5b8165e9.dirty"
 	}
 }

@@ -17,11 +17,10 @@ package main
 import (
 	p "github.com/pulumi/pulumi-go-provider"
 
-	awstags "github.com/nitrictech/pulumi-awstags-native/provider/pkg"
+	awstags "github.com/nitrictech/pulumi-awstags-native/provider"
 )
 
-// Version is initialized by the Go linker to contain the semver of this build.
-var Version string
-
 // Serve the provider against Pulumi's Provider protocol.
-func main() { p.RunProvider(awstags.Name, awstags.Version, awstags.Provider()) }
+func main() {
+	p.RunProvider(awstags.Name, awstags.Version, awstags.Provider())
+}

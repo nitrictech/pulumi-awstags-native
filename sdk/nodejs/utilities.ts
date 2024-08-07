@@ -50,7 +50,7 @@ export function getVersion(): string {
 
 /** @internal */
 export function resourceOptsDefaults(): any {
-    return { version: getVersion(), pluginDownloadURL: "https://github.com/nitrictech/pulumi-awstags/releases/download/v/pulumi-awstags-v.tgz" };
+    return { version: getVersion(), pluginDownloadURL: "https://github.com/nitrictech/pulumi-awstags-native/releases/download/v0.0.1-alpha.1723003944+4bcb4a8b.dirty/pulumi-awstags-v0.0.1-alpha.1723003944+4bcb4a8b.dirty.tgz" };
 }
 
 /** @internal */

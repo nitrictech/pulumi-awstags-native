@@ -17,7 +17,7 @@ package provider
 import (
 	"fmt"
 
-	"github.com/nitrictech/pulumi-awstags-native/provider/pkg/aws"
+	"github.com/nitrictech/pulumi-awstags-native/provider/aws"
 	p "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
 	"github.com/pulumi/pulumi-go-provider/middleware/schema"
@@ -51,7 +51,7 @@ func Provider() p.Provider {
 			Publisher:         "Nitric",
 			LogoURL:           "",
 			License:           "MIT",
-			PluginDownloadURL: fmt.Sprintf("https://github.com/nitrictech/pulumi-awstags/releases/download/v%s/pulumi-awstags-v%s.tgz", Version, Version),
+			PluginDownloadURL: fmt.Sprintf("https://github.com/nitrictech/pulumi-awstags-native/releases/download/v%s/pulumi-awstags-v%s.tgz", Version, Version),
 			LanguageMap: map[string]any{
 				"nodejs": map[string]any{
 					"packageName":        "@nitric/pulumi-awstags",
@@ -62,7 +62,7 @@ func Provider() p.Provider {
 				},
 				"go": map[string]any{
 					"generateResourceContainerTypes": true,
-					"importBasePath":                 "github.com/nitrictech/pulumi-awstags/sdk/v3/go/awstags",
+					"importBasePath":                 "github.com/nitrictech/pulumi-awstags-native/sdk/v3/go/awstags",
 				},
 			},
 		},

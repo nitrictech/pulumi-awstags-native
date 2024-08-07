@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/pulumi/pulumi-awstags/sdk/go/awstags"
+	"github.com/nitrictech/pulumi-awstags-native/sdk/v3/go/awstags"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 

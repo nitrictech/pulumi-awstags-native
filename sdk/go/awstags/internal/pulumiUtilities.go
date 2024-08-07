@@ -93,7 +93,7 @@ func IsZero(v interface{}) bool {
 // PkgResourceDefaultOpts provides package level defaults to pulumi.OptionResource.
 func PkgResourceDefaultOpts(opts []pulumi.ResourceOption) []pulumi.ResourceOption {
 	defaults := []pulumi.ResourceOption{}
-	defaults = append(defaults, pulumi.PluginDownloadURL("https://github.com/nitrictech/pulumi-awstags/releases/download/v/pulumi-awstags-v.tgz"))
+	defaults = append(defaults, pulumi.PluginDownloadURL("https://github.com/nitrictech/pulumi-awstags-native/releases/download/v0.0.1-alpha.1723003944+4bcb4a8b.dirty/pulumi-awstags-v0.0.1-alpha.1723003944+4bcb4a8b.dirty.tgz"))
 	version := SdkVersion
 	if !version.Equals(semver.Version{}) {
 		defaults = append(defaults, pulumi.Version(version.String()))
@@ -104,7 +104,7 @@ func PkgResourceDefaultOpts(opts []pulumi.ResourceOption) []pulumi.ResourceOptio
 // PkgInvokeDefaultOpts provides package level defaults to pulumi.OptionInvoke.
 func PkgInvokeDefaultOpts(opts []pulumi.InvokeOption) []pulumi.InvokeOption {
 	defaults := []pulumi.InvokeOption{}
-	defaults = append(defaults, pulumi.PluginDownloadURL("https://github.com/nitrictech/pulumi-awstags/releases/download/v/pulumi-awstags-v.tgz"))
+	defaults = append(defaults, pulumi.PluginDownloadURL("https://github.com/nitrictech/pulumi-awstags-native/releases/download/v0.0.1-alpha.1723003944+4bcb4a8b.dirty/pulumi-awstags-v0.0.1-alpha.1723003944+4bcb4a8b.dirty.tgz"))
 	version := SdkVersion
 	if !version.Equals(semver.Version{}) {
 		defaults = append(defaults, pulumi.Version(version.String()))

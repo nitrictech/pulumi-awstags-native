@@ -41,7 +41,7 @@ namespace Pulumi.Awstags.Aws
             var defaultOptions = new CustomResourceOptions
             {
                 Version = Utilities.Version,
-                PluginDownloadURL = "https://github.com/nitrictech/pulumi-awstags/releases/download/v/pulumi-awstags-v.tgz",
+                PluginDownloadURL = "https://github.com/nitrictech/pulumi-awstags-native/releases/download/v0.0.1-alpha.1723003944+4bcb4a8b.dirty/pulumi-awstags-v0.0.1-alpha.1723003944+4bcb4a8b.dirty.tgz",
             };
             var merged = CustomResourceOptions.Merge(defaultOptions, options);
             // Override the ID if one was specified for consistency with other language SDKs.
