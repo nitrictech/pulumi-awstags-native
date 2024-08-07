@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
+	"github.com/jyecusch/pulumi-awstags-native/provider/pkg/mutex"
 	p "github.com/pulumi/pulumi-go-provider"
 )
 
@@ -34,21 +35,37 @@ type TagResourcesState struct {
 // All resources must implement Create at a minimum.
 func (TagResources) Create(ctx p.Context, name string, input TagResourcesArgs, preview bool) (string, TagResourcesState, error) {
 	state := TagResourcesState{TagResourcesArgs: input}
-	if preview {
-		return name, state, nil
+
+	release, err := mutex.BorrowTags(input.ResourceARNList, getTagKeys(input.Tags))
+	if err != nil {
+		return "", state, err
 	}
 
+	if preview {
+		release(true)
+		return name, state, nil
+	}
 	addTags(input.ResourceARNList, input.Tags)
+
+	release(true)
 
 	return name, state, nil
 }
 
 func (TagResources) Delete(ctx p.Context, name string, state TagResourcesState, preview bool) error {
+	release, err := mutex.BorrowTags(state.ResourceARNList, getTagKeys(state.Tags))
+	if err != nil {
+		return err
+	}
+
 	if preview {
+		release(false)
 		return nil
 	}
 
 	removeTags(state.ResourceARNList, getTagKeys(state.Tags))
+
+	release(false)
 
 	return nil
 }
@@ -73,6 +90,26 @@ func (TagResources) Update(ctx p.Context, name string, old, new TagResourcesStat
 		}
 	}
 
+	releaseRemoved, err := mutex.BorrowTags(removedArns, getTagKeys(old.Tags))
+	if err != nil {
+		return err
+	}
+	releaseKept, err := mutex.BorrowTags(keptArns, removedTagKeys)
+	if err != nil {
+		return err
+	}
+	releaseDesired, err := mutex.BorrowTags(new.ResourceARNList, getTagKeys(new.Tags))
+	if err != nil {
+		return err
+	}
+
+	if preview {
+		releaseRemoved(false)
+		releaseKept(false)
+		releaseDesired(true)
+		return nil
+	}
+
 	// Remove existing tags from removed ARNs.
 	if err := removeTags(removedArns, getTagKeys(old.Tags)); err != nil {
 		return err
@@ -84,7 +121,15 @@ func (TagResources) Update(ctx p.Context, name string, old, new TagResourcesStat
 	}
 
 	// Add desired tags/values to kept/new ARNs.
-	return addTags(new.ResourceARNList, new.Tags)
+	if err := addTags(new.ResourceARNList, new.Tags); err != nil {
+		return err
+	}
+
+	releaseRemoved(false)
+	releaseKept(false)
+	releaseDesired(true)
+
+	return nil
 }
 
 func removeTags(arns []string, tagKeys []string) error {
