@@ -15,6 +15,8 @@ import (
 var _ = internal.GetEnvOrDefault
 
 type Tag struct {
+	Key   string `pulumi:"key"`
+	Value string `pulumi:"value"`
 }
 
 // TagInput is an input type that accepts TagArgs and TagOutput values.
@@ -29,6 +31,8 @@ type TagInput interface {
 }
 
 type TagArgs struct {
+	Key   pulumi.StringInput `pulumi:"key"`
+	Value pulumi.StringInput `pulumi:"value"`
 }
 
 func (TagArgs) ElementType() reflect.Type {
@@ -67,6 +71,14 @@ func (o TagOutput) ToOutput(ctx context.Context) pulumix.Output[Tag] {
 	return pulumix.Output[Tag]{
 		OutputState: o.OutputState,
 	}
+}
+
+func (o TagOutput) Key() pulumi.StringOutput {
+	return o.ApplyT(func(v Tag) string { return v.Key }).(pulumi.StringOutput)
+}
+
+func (o TagOutput) Value() pulumi.StringOutput {
+	return o.ApplyT(func(v Tag) string { return v.Value }).(pulumi.StringOutput)
 }
 
 func init() {

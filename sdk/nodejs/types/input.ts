@@ -7,5 +7,7 @@ import * as outputs from "../types/output";
 
 export namespace aws {
     export interface TagArgs {
+        key: pulumi.Input<string>;
+        value: pulumi.Input<string>;
     }
 }

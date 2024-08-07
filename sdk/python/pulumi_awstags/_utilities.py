@@ -247,4 +247,4 @@ def lift_output_func(func: typing.Any) -> typing.Callable[[_F], _F]:
     return (lambda _: lifted_func)
 
 def get_plugin_download_url():
-	return "https://github.com/nitrictech/pulumi-awstags-native/releases/download/v0.0.1-alpha.1723003944+4bcb4a8b.dirty/pulumi-awstags-v0.0.1-alpha.1723003944+4bcb4a8b.dirty.tgz"
+	return "https://github.com/nitrictech/pulumi-awstags-native/releases/download/v0.0.1-alpha.1723004377+3996998c.dirty/pulumi-awstags-v0.0.1-alpha.1723004377+3996998c.dirty.tgz"

@@ -7,6 +7,8 @@ import * as outputs from "../types/output";
 
 export namespace aws {
     export interface Tag {
+        key: string;
+        value: string;
     }
 
 }

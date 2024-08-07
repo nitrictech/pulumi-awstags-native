@@ -13,9 +13,17 @@ namespace Pulumi.Awstags.Aws.Outputs
     [OutputType]
     public sealed class Tag
     {
+        public readonly string Key;
+        public readonly string Value;
+
         [OutputConstructor]
-        private Tag()
+        private Tag(
+            string key,
+
+            string value)
         {
+            Key = key;
+            Value = value;
         }
     }
 }

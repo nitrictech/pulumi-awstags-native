@@ -12,6 +12,12 @@ namespace Pulumi.Awstags.Aws.Inputs
 
     public sealed class TagArgs : global::Pulumi.ResourceArgs
     {
+        [Input("key", required: true)]
+        public Input<string> Key { get; set; } = null!;
+
+        [Input("value", required: true)]
+        public Input<string> Value { get; set; } = null!;
+
         public TagArgs()
         {
         }

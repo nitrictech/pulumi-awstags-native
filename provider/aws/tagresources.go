@@ -30,14 +30,14 @@ var limiter = rate.NewLimiter(rate.Every(time.Second/5), 1)
 // - WireDependencies: Control how outputs and secrets flows through values.
 type ResourceTag struct{}
 
-type tag struct {
-	Key   string
-	Value string
+type Tag struct {
+	Key   string `pulumi:"key"`
+	Value string `pulumi:"value"`
 }
 
 type ResourceTagArgs struct {
 	ResourceARN string `pulumi:"resourceARN"`
-	Tag         tag    `pulumi:"tag"`
+	Tag         Tag    `pulumi:"tag"`
 }
 
 type ResourceTagState struct {
@@ -137,7 +137,7 @@ func removeTag(arn string, tagKey string) error {
 	return nil
 }
 
-func addTag(arn string, tag tag) error {
+func addTag(arn string, tag Tag) error {
 	// Group ARNs by region so we can make a single call to each region.
 	region, err := getRegion(arn)
 	if err != nil {
@@ -169,6 +169,11 @@ func getRegion(arnString string) (string, error) {
 	arn, err := awsArn.Parse(arnString)
 	if err != nil {
 		return "", err
+	}
+
+	// S3 bucket ARNs are regionless, so we default to us-east-1.
+	if arn.Service == "s3" {
+		return "us-east-1", nil
 	}
 
 	return arn.Region, nil
