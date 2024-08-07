@@ -4,7 +4,7 @@ This repository is a boilerplate showing how to create and locally test a native
 
 ## Authoring a Pulumi Native Provider
 
-This boilerplate creates a working Pulumi-owned provider named `awstags`.
+This boilerplate creates a working Pulumi-owned provider named `pulumi-awstags`.
 It implements a random number generator that you can [build and test out for yourself](#test-against-the-example) and then replace the Random code with code specific to your provider.
 
 
@@ -57,7 +57,7 @@ From the templated repository:
    - replace dependencies in `provider/go.mod` to reflect your repository name
    - find and replace all instances of the boilerplate `awstags` with the `NAME` of your provider.
    - find and replace all instances of the boilerplate `nitric` with the `ORG` of your provider.
-   - replace all instances of the `github.com/jyecusch/pulumi-awstags-native` repository with the `REPOSITORY` location
+   - replace all instances of the `github.com/nitrictech/pulumi-awstags-native` repository with the `REPOSITORY` location
 
 #### Build the provider and install the plugin
 

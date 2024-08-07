@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	awstags "github.com/jyecusch/pulumi-awstags-native/provider"
+	awstags "github.com/nitrictech/pulumi-awstags-native/provider"
 )
 
 func TestRandomCreate(t *testing.T) {

@@ -1,11 +1,20 @@
 {
-    "name": "@nitric/awstags",
+    "name": "@nitric/pulumi-awstags",
     "version": "${VERSION}",
+    "description": "A pulumi provider that manages awstags resources",
+    "keywords": [
+        "pulumi",
+        "awstags",
+        "kind/native"
+    ],
+    "homepage": "https://github.com/nitrictech/pulumi-awstags",
+    "repository": "https://github.com/nitrictech/pulumi-awstags",
+    "license": "MIT",
     "scripts": {
         "build": "tsc"
     },
     "dependencies": {
-        "@pulumi/pulumi": "^3.42.0"
+        "@pulumi/pulumi": "^3.0.0"
     },
     "devDependencies": {
         "@types/node": "^14",
@@ -13,6 +22,7 @@
     },
     "pulumi": {
         "resource": true,
-        "name": "awstags"
+        "name": "awstags",
+        "server": "https://github.com/nitrictech/pulumi-awstags/releases/download/v/pulumi-awstags-v.tgz"
     }
 }

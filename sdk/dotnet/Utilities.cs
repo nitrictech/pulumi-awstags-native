@@ -53,6 +53,7 @@ namespace Pulumi.Awstags
         {
             var dst = src ?? new global::Pulumi.InvokeOptions{};
             dst.Version = src?.Version ?? Version;
+            dst.PluginDownloadURL = src?.PluginDownloadURL ?? "https://github.com/nitrictech/pulumi-awstags/releases/download/v/pulumi-awstags-v.tgz";
             return dst;
         }
 

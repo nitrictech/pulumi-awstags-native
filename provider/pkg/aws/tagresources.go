@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
-	"github.com/jyecusch/pulumi-awstags-native/provider/pkg/mutex"
+	"github.com/nitrictech/pulumi-awstags-native/provider/pkg/mutex"
 	p "github.com/pulumi/pulumi-go-provider"
 	"golang.org/x/time/rate"
 )

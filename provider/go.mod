@@ -1,4 +1,4 @@
-module github.com/jyecusch/pulumi-awstags-native/provider
+module github.com/nitrictech/pulumi-awstags-native/provider
 
 go 1.21
 

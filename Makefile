@@ -2,14 +2,15 @@ PROJECT_NAME := Pulumi awstags Resource Provider
 
 PACK             := awstags
 PACKDIR          := sdk
-PROJECT          := github.com/jyecusch/pulumi-awstags-native
-NODE_MODULE_NAME := @nitric/awstags
-NUGET_PKG_NAME   := nitric.awstags
+PROJECT          := github.com/nitrictech/pulumi-awstags-native
+NODE_MODULE_NAME := @nitric/pulumi-awstags
+NUGET_PKG_NAME   := nitric.pulumi-awstags
 
 PROVIDER        := pulumi-resource-${PACK}
 VERSION         ?= $(shell pulumictl get version)
 PROVIDER_PATH   := provider
-VERSION_PATH    := ${PROVIDER_PATH}.Version
+# VERSION_PATH    := ${PROVIDER_PATH}.Version
+VERSION_PATH    := main.Version
 
 GOPATH			:= $(shell go env GOPATH)
 
@@ -46,7 +47,7 @@ ensure::
 	cd tests && go mod tidy
 
 provider::
-	(cd provider && go build -o $(WORKING_DIR)/bin/${PROVIDER} -ldflags "-X ${PROJECT}/${VERSION_PATH}=${VERSION}" $(PROJECT)/${PROVIDER_PATH}/cmd/$(PROVIDER))
+	(cd provider && go build -o $(WORKING_DIR)/bin/${PROVIDER} -ldflags "-X ${VERSION_PATH}=${VERSION}" $(PROJECT)/${PROVIDER_PATH}/cmd/$(PROVIDER))
 
 provider_debug::
 	(cd provider && go build -o $(WORKING_DIR)/bin/${PROVIDER} -gcflags="all=-N -l" -ldflags "-X ${PROJECT}/${VERSION_PATH}=${VERSION}" $(PROJECT)/${PROVIDER_PATH}/cmd/$(PROVIDER))

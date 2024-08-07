@@ -6,16 +6,23 @@ from . import _utilities
 import typing
 # Export this package's modules as members:
 from .provider import *
-from .random import *
+
+# Make subpackages available:
+if typing.TYPE_CHECKING:
+    import pulumi_awstags.aws as __aws
+    aws = __aws
+else:
+    aws = _utilities.lazy_import('pulumi_awstags.aws')
+
 _utilities.register(
     resource_modules="""
 [
  {
   "pkg": "awstags",
-  "mod": "index",
-  "fqn": "pulumi_awstags",
+  "mod": "aws",
+  "fqn": "pulumi_awstags.aws",
   "classes": {
-   "awstags:index:Random": "Random"
+   "awstags:aws:ResourceTag": "ResourceTag"
   }
  }
 ]

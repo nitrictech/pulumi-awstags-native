@@ -7,9 +7,9 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/nitrictech/pulumi-awstags/sdk/v3/go/awstags/internal"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumix"
-	"internal"
 )
 
 type Provider struct {

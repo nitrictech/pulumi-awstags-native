@@ -20,8 +20,15 @@ def readme():
 setup(name='pulumi_awstags',
       python_requires='>=3.7',
       version=VERSION,
+      description="The AWS tags provider enables you to manage tags on already deployed or imported AWS resources.",
       long_description=readme(),
       long_description_content_type='text/markdown',
+      keywords='pulumi awstags kind/native',
+      url='https://github.com/nitrictech/pulumi-awstags',
+      project_urls={
+          'Repository': 'https://github.com/nitrictech/pulumi-awstags'
+      },
+      license='MIT',
       packages=find_packages(),
       package_data={
           'pulumi_awstags': [
