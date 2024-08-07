@@ -32,30 +32,11 @@ func BorrowTag(arn, tag string) (func(isWriteOp bool), error) {
 	}
 
 	if isWriteOp, ok := tagRegistry.arnTags[arn][tag]; ok && isWriteOp {
-		return nil, fmt.Errorf("another write operation has already been registered for tag %q on ARN %q", tag, arn)
+		return nil, fmt.Errorf("a write operation has already been registered for tag %q on ARN %q", tag, arn)
 	}
 
 	return func(isWriteOp bool) {
 		tagRegistry.arnTags[arn][tag] = isWriteOp
 		tagRegistry.arnTagLocks[arn][tag].Lock()
-	}, nil
-}
-
-func BorrowTags(arns []string, tags []string) (func(isWriteOp bool), error) {
-	for _, arn := range arns {
-		for _, tag := range tags {
-			if _, err := BorrowTag(arn, tag); err != nil {
-				return nil, err
-			}
-		}
-	}
-	return func(isWriteOp bool) {
-		for _, arn := range arns {
-			for _, tag := range tags {
-				if _, err := BorrowTag(arn, tag); err != nil {
-					return
-				}
-			}
-		}
 	}, nil
 }

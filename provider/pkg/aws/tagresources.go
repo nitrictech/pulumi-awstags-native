@@ -21,22 +21,27 @@ var tagClients map[string]*resourcegroupstaggingapi.ResourceGroupsTaggingAPI
 // - Delete: Custom logic when the resource is deleted.
 // - Annotate: Describe fields and set defaults for a resource.
 // - WireDependencies: Control how outputs and secrets flows through values.
-type TagResources struct{}
+type ResourceTag struct{}
 
-type TagResourcesArgs struct {
-	ResourceARNList []string          `pulumi:"resourceARNList"`
-	Tags            map[string]string `pulumi:"tags"`
+type tag struct {
+	Key   string
+	Value string
 }
 
-type TagResourcesState struct {
-	TagResourcesArgs
+type ResourceTagArgs struct {
+	ResourceARN string `pulumi:"resourceARN"`
+	Tag         tag    `pulumi:"tag"`
+}
+
+type ResourceTagState struct {
+	ResourceTagArgs
 }
 
 // All resources must implement Create at a minimum.
-func (TagResources) Create(ctx p.Context, name string, input TagResourcesArgs, preview bool) (string, TagResourcesState, error) {
-	state := TagResourcesState{TagResourcesArgs: input}
+func (ResourceTag) Create(ctx p.Context, name string, input ResourceTagArgs, preview bool) (string, ResourceTagState, error) {
+	state := ResourceTagState{ResourceTagArgs: input}
 
-	release, err := mutex.BorrowTags(input.ResourceARNList, getTagKeys(input.Tags))
+	release, err := mutex.BorrowTag(input.ResourceARN, input.Tag.Key)
 	if err != nil {
 		return "", state, err
 	}
@@ -45,17 +50,18 @@ func (TagResources) Create(ctx p.Context, name string, input TagResourcesArgs, p
 		release(true)
 		return name, state, nil
 	}
-	addTags(input.ResourceARNList, input.Tags)
+	addTag(input.ResourceARN, input.Tag)
 
 	release(true)
 
 	return name, state, nil
 }
 
-func (TagResources) Delete(ctx p.Context, name string, state TagResourcesState, preview bool) error {
-	release, err := mutex.BorrowTags(state.ResourceARNList, getTagKeys(state.Tags))
+func (ResourceTag) Delete(ctx p.Context, name string, state ResourceTagState, preview bool) error {
+	release, err := mutex.BorrowTag(state.ResourceARN, state.Tag.Key)
 	if err != nil {
-		return err
+		// A write operation has already been registered for the tag on the ARN. So deletion isn't needed, the write operation will handle it.
+		return nil
 	}
 
 	if preview {
@@ -63,140 +69,92 @@ func (TagResources) Delete(ctx p.Context, name string, state TagResourcesState, 
 		return nil
 	}
 
-	removeTags(state.ResourceARNList, getTagKeys(state.Tags))
+	removeTag(state.ResourceARN, state.Tag.Key)
 
 	release(false)
 
 	return nil
 }
 
-func (TagResources) Update(ctx p.Context, name string, old, new TagResourcesState, preview bool) error {
-	// Find tags that need to be removed.
-	removedTagKeys := []string{}
-	for k := range old.Tags {
-		if _, ok := new.Tags[k]; !ok {
-			removedTagKeys = append(removedTagKeys, k)
+func (ResourceTag) Update(ctx p.Context, name string, old, new ResourceTagState, preview bool) error {
+	if new.ResourceARN != old.ResourceARN || new.Tag.Key != old.Tag.Key {
+		release, err := mutex.BorrowTag(old.ResourceARN, old.Tag.Key)
+		// Remove can be skipped if a write operation has already been registered for the tag on the ARN.
+		if err == nil {
+			removeTag(old.ResourceARN, old.Tag.Key)
+			release(false)
 		}
 	}
 
-	// Find the difference between the old and new ARNs.
-	keptArns := make([]string, 0)
-	removedArns := make([]string, 0)
-	for _, arn := range old.ResourceARNList {
-		if !contains(new.ResourceARNList, arn) {
-			removedArns = append(removedArns, arn)
-		} else {
-			keptArns = append(keptArns, arn)
-		}
-	}
-
-	releaseRemoved, err := mutex.BorrowTags(removedArns, getTagKeys(old.Tags))
-	if err != nil {
-		return err
-	}
-	releaseKept, err := mutex.BorrowTags(keptArns, removedTagKeys)
-	if err != nil {
-		return err
-	}
-	releaseDesired, err := mutex.BorrowTags(new.ResourceARNList, getTagKeys(new.Tags))
+	release, err := mutex.BorrowTag(new.ResourceARN, new.Tag.Key)
 	if err != nil {
 		return err
 	}
 
 	if preview {
-		releaseRemoved(false)
-		releaseKept(false)
-		releaseDesired(true)
+		release(true)
 		return nil
 	}
 
-	// Remove existing tags from removed ARNs.
-	if err := removeTags(removedArns, getTagKeys(old.Tags)); err != nil {
-		return err
-	}
+	addTag(new.ResourceARN, new.Tag)
 
-	// Remove removed tags from kept ARNs.
-	if err := removeTags(keptArns, removedTagKeys); err != nil {
-		return err
-	}
-
-	// Add desired tags/values to kept/new ARNs.
-	if err := addTags(new.ResourceARNList, new.Tags); err != nil {
-		return err
-	}
-
-	releaseRemoved(false)
-	releaseKept(false)
-	releaseDesired(true)
+	release(true)
 
 	return nil
 }
 
-func removeTags(arns []string, tagKeys []string) error {
+func removeTag(arn string, tagKey string) error {
+	region, err := getRegion(arn)
+	if err != nil {
+		return err
+	}
+
+	tagClient, err := getTaggingClient(region)
+	if err != nil {
+		return err
+	}
+
+	_, err = tagClient.UntagResources(&resourcegroupstaggingapi.UntagResourcesInput{
+		ResourceARNList: aws.StringSlice([]string{arn}),
+		TagKeys:         aws.StringSlice([]string{tagKey}),
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func addTag(arn string, tag tag) error {
 	// Group ARNs by region so we can make a single call to each region.
-	arnsByRegion := groupArnsByRegion(arns)
+	region, err := getRegion(arn)
+	if err != nil {
+		return err
+	}
 
-	for region, arns := range arnsByRegion {
-		tagClient, err := getTaggingClient(region)
-		if err != nil {
-			return err
-		}
+	tagClient, err := getTaggingClient(region)
+	if err != nil {
+		return err
+	}
 
-		_, err = tagClient.UntagResources(&resourcegroupstaggingapi.UntagResourcesInput{
-			ResourceARNList: aws.StringSlice(arns),
-			TagKeys:         aws.StringSlice(tagKeys),
-		})
-		if err != nil {
-			return err
-		}
+	_, err = tagClient.TagResources(&resourcegroupstaggingapi.TagResourcesInput{
+		ResourceARNList: aws.StringSlice([]string{arn}),
+		Tags:            aws.StringMap(map[string]string{tag.Key: tag.Value}),
+	})
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func addTags(arns []string, tags map[string]string) error {
-	// Group ARNs by region so we can make a single call to each region.
-	arnsByRegion := groupArnsByRegion(arns)
-
-	for region, arns := range arnsByRegion {
-		tagClient, err := getTaggingClient(region)
-		if err != nil {
-			return err
-		}
-
-		_, err = tagClient.TagResources(&resourcegroupstaggingapi.TagResourcesInput{
-			ResourceARNList: aws.StringSlice(arns),
-			Tags:            aws.StringMap(tags),
-		})
-		if err != nil {
-			return err
-		}
+func getRegion(arnString string) (string, error) {
+	arn, err := awsArn.Parse(arnString)
+	if err != nil {
+		return "", err
 	}
 
-	return nil
-}
-
-func groupArnsByRegion(arns []string) map[string][]string {
-	arnsByRegion := make(map[string][]string)
-	for _, arnString := range arns {
-		arn, err := awsArn.Parse(arnString)
-		if err != nil {
-			return nil
-		}
-
-		arnsByRegion[arn.Region] = append(arnsByRegion[arn.Region], arn.String())
-	}
-
-	return arnsByRegion
-}
-
-func getTagKeys(tags map[string]string) []string {
-	keys := make([]string, 0, len(tags))
-	for k := range tags {
-		keys = append(keys, k)
-	}
-
-	return keys
+	return arn.Region, nil
 }
 
 func getTaggingClient(region string) (*resourcegroupstaggingapi.ResourceGroupsTaggingAPI, error) {
@@ -216,14 +174,4 @@ func getTaggingClient(region string) (*resourcegroupstaggingapi.ResourceGroupsTa
 	tagClients[region] = resourcegroupstaggingapi.New(sess)
 
 	return tagClients[region], nil
-}
-
-func contains(arr []string, target string) bool {
-	for _, s := range arr {
-		if s == target {
-			return true
-		}
-	}
-
-	return false
 }

@@ -30,7 +30,7 @@ func Provider() p.Provider {
 	// We tell the provider what resources it needs to support.
 	return infer.Provider(infer.Options{
 		Resources: []infer.InferredResource{
-			infer.Resource[aws.TagResources, aws.TagResourcesArgs, aws.TagResourcesState](),
+			infer.Resource[aws.ResourceTag, aws.ResourceTagArgs, aws.ResourceTagState](),
 		},
 		ModuleMap: map[tokens.ModuleName]tokens.ModuleName{
 			"provider": "index",
