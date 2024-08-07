@@ -1,15 +1,22 @@
 package aws
 
 import (
+	"context"
+	"time"
+
 	awsArn "github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
 	"github.com/jyecusch/pulumi-awstags-native/provider/pkg/mutex"
 	p "github.com/pulumi/pulumi-go-provider"
+	"golang.org/x/time/rate"
 )
 
 var tagClients map[string]*resourcegroupstaggingapi.ResourceGroupsTaggingAPI
+
+// The Resource Tagging API has a rate limit of 5 requests per second. https://docs.aws.amazon.com/tag-editor/latest/userguide/reference.html
+var limiter = rate.NewLimiter(rate.Every(time.Second/5), 1)
 
 // Each resource has a controlling struct.
 // Resource behavior is determined by implementing methods on the controlling struct.
@@ -114,6 +121,11 @@ func removeTag(arn string, tagKey string) error {
 		return err
 	}
 
+	err = limiter.Wait(context.Background())
+	if err != nil {
+		return err
+	}
+
 	_, err = tagClient.UntagResources(&resourcegroupstaggingapi.UntagResourcesInput{
 		ResourceARNList: aws.StringSlice([]string{arn}),
 		TagKeys:         aws.StringSlice([]string{tagKey}),
@@ -133,6 +145,11 @@ func addTag(arn string, tag tag) error {
 	}
 
 	tagClient, err := getTaggingClient(region)
+	if err != nil {
+		return err
+	}
+
+	err = limiter.Wait(context.Background())
 	if err != nil {
 		return err
 	}
